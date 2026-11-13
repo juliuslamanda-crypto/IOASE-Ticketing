@@ -1,6 +1,6 @@
 
 "use client";
-
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Search,
@@ -178,8 +178,13 @@ export default function TicketTable({ tickets }: Props) {
                 return (
                   <tr key={ticket.id} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-5 py-4 font-semibold text-blue-700">
-                      {ticket.ticket_number}
-                    </td>
+  <Link
+    href={`/dashboard/tickets/${ticket.id}`}
+    className="hover:underline"
+  >
+    {ticket.ticket_number}
+  </Link>
+</td>
 
                     <td className="max-w-52 px-5 py-4 font-medium text-slate-700">
                       <p className="truncate">{ticket.subject}</p>
