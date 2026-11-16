@@ -1,4 +1,4 @@
-
+import AssignTicketForm from "./assign-ticket-form";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -163,7 +163,7 @@ async function TicketDetailContent({
 
     supabase
       .from("profiles")
-      .select("id, full_name, role"),
+      .select("id, full_name, role, is_active"),
   ]);
 
   const allErrors = [
@@ -189,6 +189,16 @@ async function TicketDetailContent({
   const statusHistory = statusResult.data ?? [];
   const transfers = transferResult.data ?? [];
   const profiles = profilesResult.data ?? [];
+  const activeHelpdesks = profiles
+  .filter(
+    (item) =>
+      item.role === "helpdesk" &&
+      item.is_active === true
+  )
+  .map((item) => ({
+    id: item.id,
+    full_name: item.full_name,
+  }));
 
   const profileMap = new Map(
     profiles.map((item) => [item.id, item])
@@ -325,6 +335,15 @@ async function TicketDetailContent({
             </div>
           </div>
         </section>
+
+        {/* FORM PENUGASAN HELPDESK */}
+{ticket.status === "new" &&
+  !ticket.current_helpdesk_id && (
+    <AssignTicketForm
+      ticketId={ticket.id}
+      helpdesks={activeHelpdesks}
+    />
+  )}
 
         {/* RIWAYAT PENUGASAN */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
