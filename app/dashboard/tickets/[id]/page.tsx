@@ -1,3 +1,4 @@
+import RequestTransferForm from "./request-transfer-form";
 import AssignTicketForm from "./assign-ticket-form";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -97,7 +98,7 @@ async function TicketDetailContent({
     profileError ||
     !profile ||
     !profile.is_active ||
-    !["admin", "super_admin"].includes(profile.role)
+    !["admin", "super_admin", "helpdesk"].includes(profile.role)
   ) {
     redirect("/dashboard");
   }
@@ -114,6 +115,14 @@ async function TicketDetailContent({
   }
 
   if (!ticket) notFound();
+  // Helpdesk hanya boleh membuka tiket
+// yang sedang ditugaskan kepadanya.
+if (
+  profile.role === "helpdesk" &&
+  ticket.current_helpdesk_id !== user.id
+) {
+  notFound();
+}
 
   // Mengambil data tambahan dan seluruh riwayat
   const [
@@ -188,6 +197,9 @@ async function TicketDetailContent({
   const updates = updateResult.data ?? [];
   const statusHistory = statusResult.data ?? [];
   const transfers = transferResult.data ?? [];
+  const hasPendingTransfer = transfers.some(
+  (item) => item.status === "pending"
+);
   const profiles = profilesResult.data ?? [];
   const activeHelpdesks = profiles
   .filter(
@@ -345,6 +357,16 @@ async function TicketDetailContent({
     />
   )}
 
+        {/* FORM PENGAJUAN TRANSFER */}
+{profile.role === "helpdesk" &&
+  ticket.current_helpdesk_id === user.id &&
+  ["assigned", "in_progress"].includes(ticket.status) && (
+    <RequestTransferForm
+      ticketId={ticket.id}
+      hasPendingRequest={hasPendingTransfer}
+    />
+  )}
+        
         {/* RIWAYAT PENUGASAN */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">

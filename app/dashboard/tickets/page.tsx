@@ -55,7 +55,7 @@ async function TicketsContent() {
     profileError ||
     !profile ||
     !profile.is_active ||
-    !["admin", "super_admin"].includes(profile.role)
+    !["admin", "super_admin", "helpdesk"].includes(profile.role)
   ) {
     redirect("/dashboard");
   }

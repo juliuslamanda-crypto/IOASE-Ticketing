@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import HelpdeskDashboard from "./helpdesk-dashboard";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -14,6 +15,7 @@ import {
   CircleAlert,
   CheckCircle2,
   ClipboardList,
+  ArrowLeftRight,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
@@ -110,29 +112,46 @@ async function DashboardContent() {
     redirect("/");
   }
 
-  const isManagementRole =
-    profile.role === "admin" || profile.role === "super_admin";
+  // Dashboard khusus Helpdesk
+if (profile.role === "helpdesk") {
+  return (
+    <HelpdeskDashboard
+      fullName={profile.full_name}
+      userId={user.id}
+    />
+  );
+}
 
-  // Dashboard khusus Admin dan Super Admin
-  if (!isManagementRole) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-        <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-bold text-slate-800">
-            Dashboard {roleNames[profile.role] || profile.role}
-          </h1>
-          <p className="mt-3 text-sm text-slate-500">
-            Dashboard untuk role ini sedang dalam tahap pengembangan.
-          </p>
-          <form action={signOutAction} className="mt-6">
-            <button className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">
-              Logout
-            </button>
-          </form>
-        </div>
-      </main>
-    );
-  }
+// Dashboard Admin dan Super Admin
+const isManagementRole =
+  profile.role === "admin" ||
+  profile.role === "super_admin";
+
+
+if (!isManagementRole) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
+        <h1 className="text-xl font-bold text-slate-800">
+          Dashboard {roleNames[profile.role] || profile.role}
+        </h1>
+
+        <p className="mt-3 text-sm text-slate-500">
+          Dashboard untuk role ini sedang dalam tahap pengembangan.
+        </p>
+
+        <form action={signOutAction} className="mt-6">
+          <button
+            type="submit"
+            className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+          >
+            Logout
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}
 
   // Mengambil ringkasan tiket dari database
   const [
@@ -322,6 +341,12 @@ async function DashboardContent() {
       href: "/dashboard/reports",
       icon: ChartNoAxesCombined,
       active: false,
+    },
+    {
+      label : "persetujuan transfer",
+      href : "/dashboard/transfers",
+      icon : ArrowLeftRight,
+      active : false,
     },
   ];
 
