@@ -1,5 +1,6 @@
 import RequestTransferForm from "./request-transfer-form";
 import AssignTicketForm from "./assign-ticket-form";
+import TicketHandlingPanel from "./ticket-handling-panel";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -212,6 +213,32 @@ if (
     full_name: item.full_name,
   }));
 
+    const handlingTimeline = [
+  ...updates.map((item) => ({
+    id: `update-${item.id}`,
+    type: "update" as const,
+    description: item.progress_description,
+    authorId: item.author_user_id,
+    date: item.created_at,
+  })),
+
+  ...statusHistory.map((item) => ({
+    id: `status-${item.id}`,
+    type: "status" as const,
+    description: item.previous_status
+      ? `${statusConfig[item.previous_status]?.label ?? item.previous_status} → ${
+          statusConfig[item.new_status]?.label ?? item.new_status
+        }`
+      : statusConfig[item.new_status]?.label ?? item.new_status,
+    authorId: item.changed_by_user_id,
+    date: item.changed_at,
+  })),
+].sort(
+  (a, b) =>
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+);
+
+
   const profileMap = new Map(
     profiles.map((item) => [item.id, item])
   );
@@ -357,6 +384,18 @@ if (
     />
   )}
 
+  {/* PANEL PENANGANAN TIKET */}
+{profile.role === "helpdesk" &&
+  ticket.current_helpdesk_id === user.id &&
+  ["assigned", "in_progress", "resolved", "closed"].includes(
+    ticket.status
+  ) && (
+    <TicketHandlingPanel
+      ticketId={ticket.id}
+      status={ticket.status}
+    />
+  )}
+
         {/* FORM PENGAJUAN TRANSFER */}
 {profile.role === "helpdesk" &&
   ticket.current_helpdesk_id === user.id &&
@@ -465,40 +504,54 @@ if (
           )}
         </section>
 
-        {/* PERKEMBANGAN */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <Clock className="text-blue-600" size={21} />
-            <h2 className="font-bold text-slate-800">
-              Perkembangan Penanganan
-            </h2>
+        
+{/* PERKEMBANGAN */}
+<section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <div className="flex items-center gap-3">
+    <Clock className="text-blue-600" size={21} />
+    <h2 className="font-bold text-slate-800">
+      Perkembangan Penanganan
+    </h2>
+  </div>
+
+  {handlingTimeline.length === 0 ? (
+    <p className="mt-5 text-sm text-slate-400">
+      Belum ada perkembangan penanganan.
+    </p>
+  ) : (
+    <div className="mt-5 space-y-4">
+      {handlingTimeline.map((item) => (
+        <div
+          key={item.id}
+          className="rounded-xl bg-slate-50 p-4"
+        >
+          <div className="flex items-center gap-2">
+            {item.type === "status" ? (
+              <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                Perubahan Status
+              </span>
+            ) : (
+              <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+                Catatan Progres
+              </span>
+            )}
           </div>
 
-          {updates.length === 0 ? (
-            <p className="mt-5 text-sm text-slate-400">
-              Belum ada pembaruan penanganan.
-            </p>
-          ) : (
-            <div className="mt-5 space-y-4">
-              {updates.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-xl bg-slate-50 p-4"
-                >
-                  <p className="text-sm leading-6 text-slate-700">
-                    {item.progress_description}
-                  </p>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+            {item.description}
+          </p>
 
-                  <p className="mt-3 text-xs text-slate-400">
-                    {profileMap.get(item.author_user_id)?.full_name ?? "-"}
-                    {" · "}
-                    {formatDate(item.created_at)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+          <p className="mt-3 text-xs text-slate-400">
+            {profileMap.get(item.authorId)?.full_name ?? "-"}
+            {" · "}
+            {formatDate(item.date)}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</section>
+
 
         {/* RIWAYAT STATUS */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
