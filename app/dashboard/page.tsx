@@ -3,6 +3,7 @@ import HelpdeskDashboard from "./helpdesk-dashboard";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import ClientDashboard from "./client-dashboard";
 import {
   LayoutDashboard,
   Ticket,
@@ -118,6 +119,16 @@ if (profile.role === "helpdesk") {
     <HelpdeskDashboard
       fullName={profile.full_name}
       userId={user.id}
+    />
+  );
+}
+
+    // Dashboard khusus Klien
+if (profile.role === "client") {
+  return (
+    <ClientDashboard
+      fullName={profile.full_name}
+      signOutAction={signOutAction}
     />
   );
 }
