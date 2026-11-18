@@ -241,20 +241,20 @@ export default async function ClientDashboard({
           </Link>
 
           <Link
-  href="/dashboard/my-tickets"
-  className="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
->
-  <Ticket size={19} />
-  Tiket Saya
-</Link>
+            href="/dashboard/my-tickets"
+            className="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+          >
+            <Ticket size={19} />
+            Tiket Saya
+          </Link>
 
           <Link
-  href="/dashboard/tickets/new"
-  className="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
->
-  <CircleAlert size={19} />
-  Buat Pengaduan
-</Link>
+            href="/dashboard/tickets/new"
+            className="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+          >
+            <CircleAlert size={19} />
+            Buat Pengaduan
+          </Link>
         </div>
 
         {/* AKUN DAN LOGOUT */}
@@ -445,13 +445,14 @@ export default async function ClientDashboard({
                           key={ticket.id}
                           className="transition hover:bg-slate-50"
                         >
-                          <td className="whitespace-nowrap px-6 py-4 font-semibold text-blue-700">
-                           <Link
-  href={`/dashboard/my-tickets/${ticket.id}`}
-  className="text-blue-700 hover:underline"
->
-  {ticket.ticket_number}
-</Link>
+                          {/* NOMOR TIKET */}
+                          <td className="whitespace-nowrap px-6 py-4 font-semibold">
+                            <Link
+                              href={`/dashboard/my-tickets/${ticket.id}`}
+                              className="text-blue-700 hover:text-blue-900 hover:underline"
+                            >
+                              {ticket.ticket_number || "Nomor belum tersedia"}
+                            </Link>
                           </td>
 
                           <td className="max-w-[220px] px-6 py-4">
