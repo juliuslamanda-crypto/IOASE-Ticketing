@@ -42,7 +42,7 @@ export default function Home() {
       // Mengambil profil pengguna
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("full_name, role, is_active")
+        .select("full_name, role, is_active, must_change_password")
         .eq("id", data.user.id)
         .maybeSingle();
 
@@ -63,8 +63,13 @@ export default function Home() {
         client: "Klien",
       };
 
-      // Mengarahkan pengguna ke dashboard
-router.replace("/dashboard");
+      // Memeriksa apakah pengguna wajib mengganti password
+if (profile.must_change_password) {
+  router.replace("/change-password");
+} else {
+  router.replace("/dashboard");
+}
+
 router.refresh();
 return;
     } catch (error: unknown) {
