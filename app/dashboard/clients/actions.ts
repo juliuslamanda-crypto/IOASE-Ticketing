@@ -359,3 +359,339 @@ export async function resetClientPasswordAction(targetUserId: string) {
     temporaryPassword,
   };
 }
+
+
+export async function updateClientAction(
+  clientId: string,
+  formData: FormData
+) {
+  // Memeriksa pengguna yang sedang login
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      success: false as const,
+      message: "Sesi login tidak valid. Silakan login kembali.",
+    };
+  }
+
+  // Memeriksa hak akses Admin dan Super Admin
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (
+    profileError ||
+    !profile ||
+    !profile.is_active ||
+    !["admin", "super_admin"].includes(profile.role)
+  ) {
+    return {
+      success: false as const,
+      message: "Anda tidak memiliki izin untuk mengubah data Klien.",
+    };
+  }
+
+  // Memvalidasi ID perusahaan
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (!uuidPattern.test(clientId)) {
+    return {
+      success: false as const,
+      message: "ID perusahaan tidak valid.",
+    };
+  }
+
+  // Mengambil data formulir
+  const companyName = String(
+    formData.get("companyName") ?? ""
+  ).trim();
+
+  const contactPerson = String(
+    formData.get("contactPerson") ?? ""
+  ).trim();
+
+  const phone = String(
+    formData.get("phone") ?? ""
+  ).trim();
+
+  // Validasi input
+  if (!companyName) {
+    return {
+      success: false as const,
+      message: "Nama perusahaan wajib diisi.",
+    };
+  }
+
+  if (companyName.length > 150) {
+    return {
+      success: false as const,
+      message: "Nama perusahaan maksimal 150 karakter.",
+    };
+  }
+
+  if (contactPerson.length > 150) {
+    return {
+      success: false as const,
+      message: "Nama Contact Person maksimal 150 karakter.",
+    };
+  }
+
+  if (phone.length > 50) {
+    return {
+      success: false as const,
+      message: "Nomor telepon maksimal 50 karakter.",
+    };
+  }
+
+  // Menggunakan Admin Client di sisi server
+  const admin = createAdminClient();
+
+  // Memperbarui informasi perusahaan
+  const { data: updatedClient, error: updateError } = await admin
+    .from("client_profiles")
+    .update({
+      company_name: companyName,
+      contact_person: contactPerson || null,
+      phone: phone || null,
+    })
+    .eq("id", clientId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) {
+    return {
+      success: false as const,
+      message: `Gagal memperbarui data Klien: ${updateError.message}`,
+    };
+  }
+
+  if (!updatedClient) {
+    return {
+      success: false as const,
+      message: "Data perusahaan Klien tidak ditemukan.",
+    };
+  }
+
+  return {
+    success: true as const,
+    message: "Data perusahaan berhasil diperbarui.",
+  };
+}
+
+
+export async function updateClientProductsAction(
+  clientId: string,
+  selectedProductIds: string[]
+) {
+  // 1. Memeriksa pengguna yang login
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      success: false as const,
+      message: "Sesi login tidak valid.",
+    };
+  }
+
+  // 2. Memeriksa hak akses
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (
+    profileError ||
+    !profile ||
+    !profile.is_active ||
+    !["admin", "super_admin"].includes(profile.role)
+  ) {
+    return {
+      success: false as const,
+      message: "Anda tidak memiliki izin mengelola produk Klien.",
+    };
+  }
+
+  // 3. Memvalidasi ID perusahaan
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (!uuidPattern.test(clientId)) {
+    return {
+      success: false as const,
+      message: "ID perusahaan tidak valid.",
+    };
+  }
+
+  // 4. Memvalidasi pilihan produk
+  if (!Array.isArray(selectedProductIds)) {
+    return {
+      success: false as const,
+      message: "Data pilihan produk tidak valid.",
+    };
+  }
+
+  const productIds = [
+    ...new Set(
+      selectedProductIds.filter(
+        (id): id is string =>
+          typeof id === "string" && uuidPattern.test(id)
+      )
+    ),
+  ];
+
+  if (productIds.length === 0) {
+    return {
+      success: false as const,
+      message: "Pilih minimal satu produk untuk perusahaan Klien.",
+    };
+  }
+
+  const admin = createAdminClient();
+
+  // 5. Memastikan perusahaan masih terdaftar
+  const { data: client, error: clientError } = await admin
+    .from("client_profiles")
+    .select("id")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  if (clientError || !client) {
+    return {
+      success: false as const,
+      message: "Perusahaan Klien tidak ditemukan.",
+    };
+  }
+
+  // 6. Memastikan seluruh produk yang dipilih aktif
+  const { data: validProducts, error: productError } = await admin
+    .from("products")
+    .select("id")
+    .in("id", productIds)
+    .eq("is_active", true);
+
+  if (productError) {
+    return {
+      success: false as const,
+      message: `Gagal memeriksa produk: ${productError.message}`,
+    };
+  }
+
+  if ((validProducts ?? []).length !== productIds.length) {
+    return {
+      success: false as const,
+      message: "Ada produk yang tidak ditemukan atau tidak aktif.",
+    };
+  }
+
+  // 7. Mengambil seluruh riwayat produk perusahaan,
+  // termasuk produk yang pernah dinonaktifkan.
+  const { data: existingAssignments, error: existingError } =
+    await admin
+      .from("client_products")
+      .select("product_id, is_active")
+      .eq("client_id", clientId);
+
+  if (existingError) {
+    return {
+      success: false as const,
+      message: `Gagal mengambil akses produk: ${existingError.message}`,
+    };
+  }
+
+  const existingMap = new Map(
+    (existingAssignments ?? []).map((item) => [
+      item.product_id,
+      item.is_active,
+    ])
+  );
+
+  const selectedSet = new Set(productIds);
+  const now = new Date().toISOString();
+
+  try {
+    // 8. Mengaktifkan atau menambahkan produk yang dipilih
+    for (const productId of productIds) {
+      const existingStatus = existingMap.get(productId);
+
+      // Produk sudah aktif, tidak perlu diubah.
+      if (existingStatus === true) {
+        continue;
+      }
+
+      if (existingStatus === false) {
+        // Mengaktifkan kembali produk lama.
+        const { error } = await admin
+          .from("client_products")
+          .update({
+            is_active: true,
+            assigned_by_user_id: user.id,
+            assigned_at: now,
+          })
+          .eq("client_id", clientId)
+          .eq("product_id", productId);
+
+        if (error) throw error;
+      } else {
+        // Menambahkan produk baru.
+        const { error } = await admin
+          .from("client_products")
+          .insert({
+            client_id: clientId,
+            product_id: productId,
+            assigned_by_user_id: user.id,
+            assigned_at: now,
+            is_active: true,
+          });
+
+        if (error) throw error;
+      }
+    }
+
+    // 9. Menonaktifkan produk yang sebelumnya aktif
+    // tetapi tidak lagi dipilih.
+    for (const item of existingAssignments ?? []) {
+      if (item.is_active && !selectedSet.has(item.product_id)) {
+        const { error } = await admin
+          .from("client_products")
+          .update({
+            is_active: false,
+          })
+          .eq("client_id", clientId)
+          .eq("product_id", item.product_id);
+
+        if (error) throw error;
+      }
+    }
+
+    return {
+      success: true as const,
+      message: "Produk Klien berhasil diperbarui.",
+    };
+  } catch (error) {
+    console.error("Update client products error:", error);
+
+    return {
+      success: false as const,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Gagal memperbarui produk Klien.",
+    };
+  }
+}
+

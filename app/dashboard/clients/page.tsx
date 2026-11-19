@@ -10,6 +10,8 @@ import {
   Package,
   Users,
   Plus,
+  Pencil,
+  Settings2,
 } from "lucide-react";
 
 function Loading() {
@@ -304,7 +306,25 @@ async function ClientsContent() {
 
 {/* KOLOM AKSI AKUN */}
 <td className="px-6 py-5">
-  <ResetClientPasswordButton userId={client.user_id} />
+  <div className="flex flex-wrap items-center gap-2">
+    <Link
+      href={`/dashboard/clients/${client.id}/edit`}
+      className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+    >
+      <Pencil size={14} />
+      Edit
+    </Link>
+
+    <Link
+      href={`/dashboard/clients/${client.id}/products`}
+      className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+    >
+      <Settings2 size={14} />
+      Kelola Produk
+    </Link>
+
+    <ResetClientPasswordButton userId={client.user_id} />
+  </div>
 </td>
                       </tr>
                     );

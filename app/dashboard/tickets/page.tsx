@@ -3,7 +3,15 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Ticket, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Ticket,
+  LogOut,
+  Building2,
+  ArrowLeftRight,
+  Package,
+  ChartNoAxesCombined,
+} from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import TicketTable from "./ticket-table";
@@ -168,6 +176,7 @@ async function TicketsContent() {
   return (
     <div className="min-h-screen bg-slate-100 lg:flex">
 
+      
       {/* SIDEBAR */}
       <aside className="flex w-full flex-col bg-[#102C46] text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0">
         <div className="border-b border-white/10 px-6 py-6">
@@ -177,40 +186,93 @@ async function TicketsContent() {
           </p>
         </div>
 
-        <nav className="flex-1 space-y-2 px-4 py-6">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/10"
-          >
-            <LayoutDashboard size={19} />
-            Dashboard
-          </Link>
+        <div className="flex-1 px-4 py-6">
+          <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            Menu Utama
+          </p>
 
-          <Link
-            href="/dashboard/tickets"
-            className="flex items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white"
-          >
-            <Ticket size={19} />
-            Daftar Tiket
-          </Link>
-        </nav>
+          <nav className="space-y-1">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+            >
+              <LayoutDashboard size={19} />
+              Dashboard
+            </Link>
 
+            <Link
+              href="/dashboard/tickets"
+              className="flex items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white"
+            >
+              <Ticket size={19} />
+              Daftar Tiket
+            </Link>
+
+            {["admin", "super_admin"].includes(profile.role) && (
+              <>
+                <Link
+                  href="/dashboard/clients"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  <Building2 size={19} />
+                  Data Klien
+                </Link>
+
+                <Link
+                  href="/dashboard/transfers"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  <ArrowLeftRight size={19} />
+                  Persetujuan Transfer
+                </Link>
+
+                <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-500">
+                  <Package size={19} />
+                  Produk
+                  <span className="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-[9px]">
+                    Segera
+                  </span>
+                </div>
+
+                <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-500">
+                  <ChartNoAxesCombined size={19} />
+                  Laporan
+                  <span className="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-[9px]">
+                    Segera
+                  </span>
+                </div>
+              </>
+            )}
+          </nav>
+        </div>
+
+        {/* INFORMASI AKUN DAN LOGOUT */}
         <div className="border-t border-white/10 p-4">
-          <p className="truncate px-3 text-sm font-semibold">
-            {profile.full_name}
-          </p>
-          <p className="px-3 text-xs text-slate-400">
-            {profile.role === "super_admin" ? "Super Admin" : "Admin"}
-          </p>
+          <div className="mb-3 rounded-xl bg-white/5 p-3">
+            <p className="truncate text-sm font-semibold">
+              {profile.full_name}
+            </p>
+            <p className="text-xs text-slate-400">
+              {profile.role === "super_admin"
+                ? "Super Admin"
+                : profile.role === "admin"
+                  ? "Admin"
+                  : "Helpdesk"}
+            </p>
+          </div>
 
           <form action={signOutAction}>
-            <button className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-300 hover:bg-red-500/10 hover:text-red-300">
+            <button
+              type="submit"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-red-500/10 hover:text-red-300"
+            >
               <LogOut size={18} />
               Logout
             </button>
           </form>
         </div>
       </aside>
+
 
       {/* MAIN CONTENT */}
       <main className="min-w-0 flex-1">
